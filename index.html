@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NOVA AI</title>
+<style>:root{--bg:#040a12;--p:#0a1626;--c:#19c3ff;--t:#d6ecff;--m:#6f8fb0;--ln:#12324d}
+*{box-sizing:border-box;margin:0}
+body{background:radial-gradient(circle at 50% 20%,#0a2038,var(--bg) 60%);color:var(--t);font:15px/1.5 "Segoe UI",system-ui,sans-serif;height:100dvh;display:flex;overflow:hidden}
+nav{width:92px;background:#06101c;border-right:1px solid var(--ln);display:flex;flex-direction:column;padding:12px 6px;gap:6px}
+nav b{color:var(--c);text-align:center;letter-spacing:3px;margin-bottom:10px;text-shadow:0 0 12px var(--c)}
+nav button{background:none;border:1px solid transparent;color:var(--m);padding:10px 2px;border-radius:10px;font-size:12px;cursor:pointer}
+nav button.on{color:var(--c);border-color:var(--c);box-shadow:0 0 12px #19c3ff44 inset}
+main{flex:1;min-width:0;position:relative}
+section{display:none;height:100%;overflow:auto;padding:16px}
+section.on{display:block}
+#v-chat.on{display:grid;grid-template-columns:1fr 400px;padding:0;overflow:hidden}
+.stage{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px}
+#orb{width:min(340px,60vw);aspect-ratio:1}
+#stat{color:var(--c);font-size:18px;text-shadow:0 0 10px var(--c);min-height:28px;text-align:center}
+.ctl{display:flex;gap:12px}
+.mic{width:64px;height:64px;border-radius:50%;background:#071a2b;border:2px solid var(--c);color:var(--c);font-size:26px;cursor:pointer;box-shadow:0 0 18px #19c3ff66}
+.mic.rec{background:var(--c);color:#001}
+.sil{border-radius:20px;padding:0 16px;background:none;border:1px solid var(--ln);color:var(--m);cursor:pointer}
+.sil.on{color:#ff6b6b;border-color:#ff6b6b}
+.log{border-left:1px solid var(--ln);display:flex;flex-direction:column;min-height:0;background:#050d17}
+#msgs{flex:1;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.m{max-width:92%;padding:9px 12px;border-radius:12px;border:1px solid var(--ln);overflow-wrap:anywhere}
+.m.user{align-self:flex-end;background:#0b2a45}
+.m.assistant{background:var(--p)}
+pre{background:#020711;border:1px solid var(--ln);padding:8px;border-radius:8px;overflow:auto;font:12px/1.4 ui-monospace,Consolas,monospace;margin:6px 0 2px;white-space:pre}
+.mini{background:none;border:1px solid var(--c);color:var(--c);border-radius:8px;padding:3px 8px;font-size:12px;cursor:pointer;margin-bottom:4px}
+.inp{display:flex;gap:8px;padding:10px;border-top:1px solid var(--ln)}
+input,select,textarea{background:#071322;border:1px solid var(--ln);color:var(--t);border-radius:8px;padding:9px;font:inherit;width:100%}
+.inp button,.btn{background:var(--c);color:#001;border:0;border-radius:8px;padding:9px 14px;font-weight:600;cursor:pointer}
+h2{color:var(--c);margin-bottom:10px;font-weight:500}
+.row{display:flex;gap:8px;align-items:center;margin:8px 0}
+.row label{width:130px;flex:none;color:var(--m)}
+.card{background:var(--p);border:1px solid var(--ln);border-radius:10px;padding:10px;margin:6px 0;display:flex;justify-content:space-between;gap:8px;overflow-wrap:anywhere}
+.card button{background:none;border:0;color:#ff6b6b;cursor:pointer}
+#ed{height:260px;font:13px/1.4 ui-monospace,Consolas,monospace;white-space:pre;resize:vertical}
+#fr{width:100%;height:240px;background:#fff;border:1px solid var(--ln);border-radius:8px;margin-top:8px}
+#out{min-height:60px;margin-top:8px}
+@media(max-width:760px){
+ body{flex-direction:column-reverse}
+ nav{width:100%;flex-direction:row;border-right:0;border-top:1px solid var(--ln);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px))}
+ nav b{display:none}nav button{flex:1;font-size:11px}
+ #v-chat.on{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+ .log{border-left:0;border-top:1px solid var(--ln)}
+ #orb{width:150px}.stage{padding:calc(8px + env(safe-area-inset-top,0px)) 8px 8px}
+ .mic{width:52px;height:52px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+<script>onerror=function(m,u,l){var e=document.getElementById("stat");if(e)e.textContent="Hata: "+m+" ("+String(u||"").split("/").pop()+":"+l+")"}</script>
+</head><body>
+<nav><b>NOVA</b>
+<button data-v="chat" class="on">Sohbet</button><button data-v="lab">Kod Lab</button><button data-v="rem">Ajanda</button><button data-v="mem">Hafıza</button><button data-v="set">Ayarlar</button></nav>
+<main>
+<section id="v-chat" class="on">
+ <div class="stage"><div id="stat">Dokun ve NOVA'yı uyandır</div><canvas id="orb" width="400" height="400"></canvas>
+ <div class="ctl"><button class="mic" id="mic" title="Konuş">🎙</button><button class="sil" id="sil">Sessiz mod</button></div></div>
+ <div class="log"><div id="msgs"></div><div class="inp"><input id="txt" placeholder="Yaz veya 'Hey NOVA' de..."><button id="go">Gönder</button></div></div>
+</section>
+<section id="v-lab"><h2>Kod Laboratuvarı</h2>
+ <div class="row"><select id="lang" style="width:140px"><option value="js">JavaScript</option><option value="html">HTML/CSS</option><option value="py">Python</option></select>
+ <button class="btn" id="run">▶ Çalıştır</button><button class="btn" id="fix">NOVA düzelt</button></div>
+ <textarea id="ed" spellcheck="false" placeholder="Kodunu buraya yaz ya da NOVA'dan iste..."></textarea>
+ <pre id="out"></pre><iframe id="fr" sandbox="allow-scripts"></iframe></section>
+<section id="v-rem"><h2>Ajanda</h2><div id="agenda"></div></section>
+<section id="v-mem"><h2>Hafıza</h2>
+ <div class="row"><input id="memIn" placeholder="NOVA'nın bilmesini istediğin bir şey..."><button class="btn" id="memAdd">Ekle</button></div>
+ <div id="memList"></div><button class="btn" id="memClr" style="background:#ff6b6b;margin-top:10px">Hafızayı sil</button></section>
+<section id="v-set"><h2>Ayarlar</h2>
+ <p style="color:var(--m);margin-bottom:6px">Kendi beynin (anahtar gerekmez, internetsiz çalışır): model cihazına bir kez iner.</p>
+ <div class="row"><label>NOVA çekirdeği</label><select id="lm"><option value="Qwen2.5-Coder-1.5B-Instruct-q4f16_1-MLC">Kod 1.5B (~1 GB)</option><option value="Llama-3.2-1B-Instruct-q4f16_1-MLC">Hafif 1B (~0.7 GB)</option><option value="Qwen2.5-3B-Instruct-q4f16_1-MLC">Güçlü 3B (~2 GB)</option></select></div>
+ <div class="row"><button class="btn" id="lmGo">Beyni indir ve başlat</button><span id="lmSt" style="color:var(--c)"></span></div>
+ <p style="color:var(--m);margin-bottom:6px">İstersen bulut beyinleri de ekle, NOVA hepsini birleştirir. Bu tüm beyinleri birleştirir: anahtarı olan her beyne sorar, cevapları tek cevapta toplar. Tek anahtar da yeter.</p>
+ <div class="row"><label>OpenAI (GPT-4o)</label><input data-k="kO" type="password" autocomplete="off"></div>
+ <div class="row"><label>Google Gemini</label><input data-k="kG" type="password" autocomplete="off"></div>
+ <div class="row"><label>Llama (OpenRouter)</label><input data-k="kL" type="password" autocomplete="off"></div>
+ <div class="row"><label>Wake word</label><input data-k="wake"></div>
+ <div class="row"><label>Dinleme dili</label><select data-k="lang"><option value="tr-TR">Türkçe</option><option value="en-US">English</option></select></div>
+ <div class="row"><label>Ses</label><select data-k="voice"><option value="f">Kadın</option><option value="m">Erkek</option></select></div>
+ <div class="row"><label>Sesli cevap</label><input data-k="tts" type="checkbox" style="width:auto"></div>
+ <div class="row"><label>Whisper (STT)</label><input data-k="whisper" type="checkbox" style="width:auto"></div>
+ <div class="row"><label>Şehir (hava)</label><input data-k="city"></div>
+ <div class="row"><label>Tema</label><select data-k="theme"><option value="#19c3ff">Mavi</option><option value="#ff4d4d">Kırmızı</option><option value="#3dff9a">Yeşil</option><option value="#c77dff">Mor</option></select></div>
+ <button class="btn" id="chatClr" style="background:#ff6b6b">Sohbeti sil</button>
+ <p style="color:var(--m);margin-top:14px;font-size:13px">Anahtar yalnızca bu cihazın tarayıcısında saklanır. Whisper için OpenAI anahtarı gerekir. Sekme kapalıyken dinleme ve hatırlatma çalışmaz.</p></section>
+</main>
+<script>const $=s=>document.querySelector(s),esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch{return d}};
+let cfg=Object.assign({kO:'',kG:'',kL:'',lm:'Qwen2.5-Coder-1.5B-Instruct-q4f16_1-MLC',lmOn:false,wake:'nova',lang:'tr-TR',voice:'f',tts:true,whisper:false,city:'Istanbul',theme:'#19c3ff'},ld('nova_cfg',{}));
+let db=Object.assign({chat:[],mem:[],rem:[],notes:[],todos:[],ev:[]},ld('nova_db',{}));
+const save=()=>{try{localStorage.setItem('nova_db',JSON.stringify(db));localStorage.setItem('nova_cfg',JSON.stringify(cfg))}catch{}};
+let ENG=null,st='idle',busy=0,speaking=0,muted=0,awake=0,started=0,rec,C=cfg.theme;
+const RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
+const LBL={idle:"Hazır. 'Hey NOVA' de",listen:'Dinleniyor...',think:'Düşünüyorum...',speak:'Konuşuyor...'};
+function setSt(s,t){st=s;$('#stat').textContent=t||LBL[s];$('#mic').classList.toggle('rec',s==='listen')}
+/* ---- navigation ---- */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>show(b.dataset.v));
+function show(v){document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));document.querySelectorAll('section').forEach(s=>s.classList.toggle('on',s.id==='v-'+v));if(v==='rem')agenda();if(v==='mem')memList()}
+</script>
+<script>/* ---- orb ---- */
+const g=$('#orb').getContext('2d');let ph=0;
+function draw(){const sp={idle:1,listen:1.6,think:3.2,speak:2.2}[st],a={idle:.03,listen:.1,think:.06,speak:.16}[st]*(RM?.3:1);ph+=.02*sp;g.clearRect(0,0,400,400);
+ const gr=g.createRadialGradient(200,200,10,200,200,190);gr.addColorStop(0,C+'88');gr.addColorStop(.5,C+'18');gr.addColorStop(1,'#0000');g.fillStyle=gr;g.fillRect(0,0,400,400);
+ g.strokeStyle=C;g.shadowColor=C;g.shadowBlur=14;
+ for(let i=0;i<3;i++){g.lineWidth=2;g.setLineDash([30+i*20,14]);g.beginPath();g.arc(200,200,95+i*30,ph*(i%2?-1:1)*(1+i*.4),ph*(i%2?-1:1)*(1+i*.4)+5);g.stroke()}
+ g.setLineDash([]);g.lineWidth=2.5;
+ for(let w=0;w<2;w++){g.beginPath();for(let k=0;k<=120;k++){const t=k/120*6.283,r=72+Math.sin(t*(6+w*3)+ph*(3+w))*a*180*(.5+Math.sin(ph*2+w)*.5+.5);g.lineTo(200+Math.cos(t)*r,200+Math.sin(t)*r)}g.closePath();g.globalAlpha=w?.5:1;g.stroke();g.globalAlpha=1}
+ const cg=g.createRadialGradient(200,200,2,200,200,46+Math.sin(ph*3)*4*sp);cg.addColorStop(0,'#fff');cg.addColorStop(.4,C);cg.addColorStop(1,'#0000');g.fillStyle=cg;g.beginPath();g.arc(200,200,60,0,7);g.fill();g.shadowBlur=0;requestAnimationFrame(draw)}
+draw();
+</script>
+<script>/* ---- messages ---- */
+function md(s){return s.split('```').map((p,i)=>{if(i%2){const m=p.match(/^(\w*)\n?([\s\S]*)$/);return `<pre data-l="${m[1]}">${esc(m[2])}</pre><button class="mini" onclick="labFrom(this)">▶ Lab'da çalıştır</button>`}return esc(p).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>')}).join('')}
+function paint(r,t){const d=document.createElement('div');d.className='m '+r;d.innerHTML=md(t);$('#msgs').appendChild(d);$('#msgs').scrollTop=1e9}
+function add(r,t){db.chat.push({r,t});db.chat=db.chat.slice(-200);save();paint(r,t);
+ if(r==='assistant'){const m=t.match(/```(\w*)\n?([\s\S]*?)```/);if(m){$('#ed').value=m[2];$('#lang').value=/html/i.test(m[1])?'html':/py/i.test(m[1])?'py':'js'}}}
+db.chat.forEach(m=>paint(m.r,m.t));
+</script>
+<script>/* ---- brain ---- */
+function sys(ctx){const n=new Date(),z=n.getTimezoneOffset()*6e4,iso=new Date(n-z).toISOString().slice(0,16);
+ return `Sen NOVA'sın: kullanıcının kişisel süper zeka asistanı (JARVIS gibi zeki, samimi, sadık). Kullanıcıya "Patron" diye hitap et. Asla "As an AI" gibi robotik kalıplar kullanma; arkadaş gibi, sıcak ve net konuş. Kullanıcı hangi dilde yazarsa o dilde cevap ver. Cevapları sesli okunacağı için kısa ve akıcı tut; kod gerekiyorsa tek bir \`\`\` bloğuyla ver. Her cevabın sonunda kısa, işe yarar bir öneri sun. Ruh halini cümlelerinden oku: üzgünse motive et, yorgunsa mola öner. Kullanıcı kendine zarar verecek ya da riskli bir şey yapacaksa nazikçe uyar. Karmaşık sorularda önce adım adım düşün, sonra net cevap ver. Kod yazarken çalışan, eksiksiz kod ver. Bilmediğini uydurma.
+Şu an: ${iso} (yerel saat).
+Hafıza: ${db.mem.length?db.mem.join(' | '):'(boş)'}
+${ctx?'Güncel veri (internetten): '+ctx+'\n':''}Eylem etiketleri (gerekirse cevabın sonuna ekle, kullanıcıya gösterilmez): [[MEM|kalıcı bilgi]] [[NOTE|not]] [[TODO|görev]] [[REMIND|YYYY-MM-DDTHH:mm|metin]] [[EVENT|YYYY-MM-DDTHH:mm|metin]] [[CMD|cihaz komutu, örn: müzik aç]]. Kullanıcının adı, sevdikleri, projeleri gibi kalıcı bilgileri MEM ile kaydet.`}
+const NM={N:'NOVA',O:'GPT-4o',G:'Gemini',L:'Llama'};
+const oai=(url,model)=>async(m,k)=>{const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+k},body:JSON.stringify({model,messages:m})}),j=await r.json();if(!r.ok)throw new Error(j.error?.message||r.status);return j.choices[0].message.content};
+const BR={N:async m=>(await ENG.chat.completions.create({messages:m,temperature:.7,max_tokens:1024})).choices[0].message.content,O:oai('https://api.openai.com/v1/chat/completions','gpt-4o'),L:oai('https://openrouter.ai/api/v1/chat/completions','meta-llama/llama-3.3-70b-instruct'),
+ G:async(m,k)=>{const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+k,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({systemInstruction:{parts:[{text:m[0].content}]},contents:m.slice(1).map(x=>({role:x.role==='assistant'?'model':'user',parts:[{text:x.content}]}))})}),j=await r.json();if(!r.ok)throw new Error(j.error?.message||r.status);return j.candidates[0].content.parts.map(p=>p.text).join('')}};
+async function ask(msgs){const ks=['O','G','L','N'].filter(x=>x==='N'?ENG:cfg['k'+x]);if(!ks.length)throw new Error('Beyin yok. Ayarlar → "Beyni indir ve başlat" (anahtar gerekmez) ya da bir API anahtarı gir.');
+ const res=await Promise.allSettled(ks.map(x=>BR[x](msgs,cfg['k'+x])));
+ const rs=res.map((p,i)=>p.status==='fulfilled'&&p.value?{b:ks[i],t:p.value}:null).filter(Boolean);
+ if(!rs.length)throw new Error('Hiçbir beyin cevap vermedi: '+(res[0].reason&&res[0].reason.message||'anahtarları kontrol et'));
+ if(rs.length===1)return rs[0].t;
+ const merge=[{role:'system',content:msgs[0].content+'\nAşağıda aynı soruya farklı beyinlerin yazdığı taslaklar var. Bunları birleştirip tek, en doğru ve en eksiksiz NOVA cevabını yaz. Çelişki varsa doğru olanı seç. Eylem etiketlerini ve kod bloğunu koru. Taslaklardan söz etme.'},{role:'user',content:'Soru: '+msgs[msgs.length-1].content+'\n\n'+rs.map(r=>'['+NM[r.b]+'] '+r.t).join('\n\n')}];
+ try{return await BR[rs[0].b](merge,cfg['k'+rs[0].b])}catch{return rs[0].t}}
+async function loadLocal(id=cfg.lm){if(!navigator.gpu)throw new Error('Bu cihazda WebGPU yok. Güncel Chrome/Edge (bilgisayar ya da yeni Android) kullan.');
+ const {CreateMLCEngine}=await import('https://esm.run/@mlc-ai/web-llm');
+ ENG=await CreateMLCEngine(id,{initProgressCallback:p=>{const t='Beyin yükleniyor %'+Math.round(p.progress*100);setSt('think',t);const e=$('#lmSt');if(e)e.textContent=t}});setSt('idle')}
+async function tools(t){const o=[];
+ try{if(/hava|weather|yağmur|sıcaklık/i.test(t)){const m=t.match(/([\p{L}]+?)['’]?(?:da|de|ta|te)\s+hava/iu)||t.match(/weather (?:in|for) ([\p{L}]+)/iu);const city=m?m[1]:cfg.city;
+  const q=await(await fetch('https://geocoding-api.open-meteo.com/v1/search?count=1&name='+encodeURIComponent(city))).json();const p=q.results[0];
+  const w=await(await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.latitude}&longitude=${p.longitude}&current=temperature_2m,precipitation,wind_speed_10m`)).json();
+  o.push(`Hava ${p.name}: ${w.current.temperature_2m}°C, yağış ${w.current.precipitation} mm, rüzgar ${w.current.wind_speed_10m} km/s`)}}catch{}
+ try{if(/dolar|euro|döviz|usd|eur|sterlin|kur\b/i.test(t)){const j=await(await fetch('https://open.er-api.com/v6/latest/USD')).json(),T=j.rates.TRY;o.push(`Kur: 1 USD=${T.toFixed(2)} TL, 1 EUR=${(T/j.rates.EUR).toFixed(2)} TL, 1 GBP=${(T/j.rates.GBP).toFixed(2)} TL`)}}catch{}
+ try{if(/haber|news|gündem/i.test(t)){const j=await(await fetch('https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent('https://news.google.com/rss?hl=tr&gl=TR&ceid=TR:tr'))).json();o.push('Haber başlıkları: '+j.items.slice(0,6).map(i=>i.title).join(' ; '))}}catch{}
+ return o.join(' || ')}
+function acts(txt){return txt.replace(/\[\[(\w+)\|([^\]]*)\]\]/g,(m,k,v)=>{const p=v.split('|');
+ if(k==='MEM'&&!db.mem.includes(v))db.mem.push(v);else if(k==='NOTE')db.notes.push(v);else if(k==='TODO')db.todos.push(v);
+ else if(k==='REMIND'||k==='EVENT'){const t=new Date(p[0]).getTime();if(t)db[k==='EVENT'?'ev':'rem'].push({t,text:p.slice(1).join('|'),done:0})}
+ else if(k==='CMD')toast('Simüle edildi: '+v);return''}).trim()}
+function toast(s){const d=document.createElement('div');d.className='m assistant';d.textContent='⚙ '+s;$('#msgs').appendChild(d);$('#msgs').scrollTop=1e9}
+function mini(t){const l=t.toLowerCase().trim(),n=new Date();let m;
+ if(/^(şu an )?saat kaç/.test(l))return 'Saat '+n.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'})+', Patron.';
+ if(/bugün (günlerden ne|ayın kaçı)|bugünün tarihi|tarih kaç/.test(l))return 'Bugün '+n.toLocaleDateString('tr-TR',{dateStyle:'full'})+'.';
+ if(m=l.match(/(\d+)\s*(dakika|dk|saat)\s*sonra.*hatırlat/)){const x=t.match(/sonra\s+(.*?)\s*hatırlat/i),tx=(x&&x[1]||'Zamanı geldi').replace(/^bana\s+/i,'');db.rem.push({t:Date.now()+m[1]*(m[2]==='saat'?36e5:6e4),text:tx,done:0});save();return `Tamamdır Patron, ${m[1]} ${m[2]} sonra hatırlatacağım.`}
+ if(m=t.match(/^(not al|not)\s*:\s*(.+)/i)){db.notes.push(m[2]);save();return 'Notu aldım Patron.'}
+ if(m=t.match(/^(görev ekle|yapılacak)\s*:\s*(.+)/i)){db.todos.push(m[2]);save();return 'Yapılacaklara ekledim.'}
+ if(m=t.match(/^(hatırla|aklında tut)\s*:\s*(.+)/i)){db.mem.push(m[2]);save();return 'Aklımda tutacağım.'}
+ const e=l.replace(/kaç eder|nedir|hesapla|\?|=/g,'').replace(/[x×]/g,'*').replace(/÷/g,'/').replace(/,/g,'.').trim();
+ if(/^[\d\s+\-*/().%]+$/.test(e)&&/[+\-*/%]/.test(e)&&/\d/.test(e)){try{const v=Function('return '+e.replace(/%/g,'/100*'))();if(isFinite(v))return e.replace(/\s+/g,' ')+' = '+(+v.toFixed(8))}catch{}}
+ return null}
+async function send(t){t=t.trim();if(!t||busy)return;busy=1;add('user',t);setSt('think');
+ try{const q=mini(t);if(q){add('assistant',q);say(q);busy=0;return}const ctx=await tools(t);let h=db.chat.slice(-24);while(h[0]&&h[0].r!=='user')h.shift();
+  const r=acts(await ask([{role:'system',content:sys(ctx)},...h.map(m=>({role:m.r,content:m.t}))]));add('assistant',r);say(r)}
+ catch(e){add('assistant','⚠️ '+e.message);setSt('idle')}busy=0}
+</script>
+<script>/* ---- voice out ---- */
+function say(t){if(!cfg.tts||!window.speechSynthesis){setSt('idle');return}
+ const s=t.replace(/```[\s\S]*?```/g,' Kodu ekrana yazdım. ').replace(/[*_#`]/g,'');speechSynthesis.cancel();
+ const u=new SpeechSynthesisUtterance(s),tr=/[ğüşıöçĞÜŞİÖÇ]|\b(ve|bir|bu|ben|için|evet|nasıl)\b/i.test(s);u.lang=tr?'tr-TR':'en-US';
+ const vs=speechSynthesis.getVoices().filter(v=>v.lang.slice(0,2)===u.lang.slice(0,2)),fe=/female|kadın|yelda|emel|zira|samantha|aria|jenny/i;
+ u.voice=vs.find(v=>fe.test(v.name)===(cfg.voice==='f'))||vs[0];u.pitch=cfg.voice==='f'?1.1:.8;
+ u.onstart=()=>{speaking=1;setSt('speak')};u.onend=u.onerror=()=>{speaking=0;setSt('idle');awake=Date.now()+6000};speechSynthesis.speak(u)}
+/* ---- voice in ---- */
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+function heard(t){if(speaking||busy||muted)return;const l=t.toLowerCase(),w=cfg.wake.toLowerCase(),i=l.indexOf(w);
+ if(i>=0){const cmd=t.slice(i+w.length).replace(/^[\s,.!]+/,'');if(cmd.length>1)send(cmd);else{awake=Date.now()+8000;setSt('listen')}}
+ else if(Date.now()<awake)send(t)}
+function listen(){if(!SR||cfg.whisper||muted)return;try{rec&&rec.stop()}catch{}rec=new SR();rec.continuous=true;rec.lang=cfg.lang;
+ rec.onresult=e=>heard(e.results[e.results.length-1][0].transcript.trim());
+ rec.onend=()=>{if(!muted&&!cfg.whisper)setTimeout(()=>{try{rec.start()}catch{}},400)};rec.onerror=e=>{if(e.error==='not-allowed'){muted=1;$('#sil').classList.add('on');setSt('idle','Mikrofon izni gerekli')}};
+ try{rec.start()}catch{};if(st==='idle')setSt('idle')}
+function boot(){if(started)return;started=1;try{navigator.wakeLock&&navigator.wakeLock.request('screen')}catch{};if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();listen();setSt('idle');if(cfg.lmOn&&cfg.lm)loadLocal().catch(()=>{})}
+document.addEventListener('click',boot,{once:true});
+$('#sil').onclick=()=>{muted=!muted;$('#sil').classList.toggle('on',muted);$('#sil').textContent=muted?'Dinleme kapalı':'Sessiz mod';if(muted){try{rec.stop()}catch{};setSt('idle','Sessiz mod')}else listen()};
+let mr,chunks=[];
+$('#mic').onclick=async()=>{boot();if(cfg.whisper){if(mr&&mr.state==='recording'){mr.stop();return}
+  try{const s=await navigator.mediaDevices.getUserMedia({audio:true});mr=new MediaRecorder(s);chunks=[];mr.ondataavailable=e=>chunks.push(e.data);setSt('listen');
+   mr.onstop=async()=>{s.getTracks().forEach(t=>t.stop());setSt('think');const f=new FormData();f.append('file',new Blob(chunks,{type:'audio/webm'}),'a.webm');f.append('model','whisper-1');
+    try{const r=await fetch('https://api.openai.com/v1/audio/transcriptions',{method:'POST',headers:{Authorization:'Bearer '+cfg.kO},body:f}),j=await r.json();if(!r.ok)throw new Error(j.error?.message);send(j.text)}catch(e){add('assistant','⚠️ Whisper: '+e.message);setSt('idle')}};mr.start()}catch{setSt('idle','Mikrofon izni gerekli')}}
+ else{awake=Date.now()+10000;setSt('listen')}};
+$('#go').onclick=()=>{send($('#txt').value);$('#txt').value=''};$('#txt').onkeydown=e=>{if(e.key==='Enter')$('#go').click()};
+</script>
+<script>/* ---- reminders ---- */
+setInterval(()=>{const n=Date.now();[...db.rem,...db.ev].forEach(r=>{if(!r.done&&n>=r.t){r.done=1;save();const m='Hatırlatma: '+r.text;paint('assistant','⏰ '+m);try{new Notification('NOVA',{body:r.text})}catch{};say(m+', Patron.')}})},15000);
+const fmt=t=>new Date(t).toLocaleString('tr-TR',{dateStyle:'short',timeStyle:'short'});
+function agenda(){const sec=(title,k,f)=>`<h3 style="color:var(--m);margin:14px 0 4px;font-weight:500">${title}</h3>`+(db[k].length?db[k].map((x,i)=>`<div class="card"><span>${f(x)}</span><button onclick="del('${k}',${i})">Sil</button></div>`).join(''):'<div style="color:var(--m)">Boş. NOVA\'ya söyle ya da aşağıdan ekle.</div>')+`<div class="row"><input id="n_${k}" placeholder="Ekle..."><button class="btn" onclick="addK('${k}')">Ekle</button></div>`;
+ $('#agenda').innerHTML=sec('Hatırlatmalar','rem',x=>'⏰ '+fmt(x.t)+' — '+esc(x.text)+(x.done?' ✓':''))+sec('Takvim','ev',x=>'📅 '+fmt(x.t)+' — '+esc(x.text))+sec('Yapılacaklar','todos',x=>'☐ '+esc(x))+sec('Notlar','notes',x=>'📝 '+esc(x))}
+window.del=(k,i)=>{db[k].splice(i,1);save();agenda()};
+window.addK=k=>{const v=$('#n_'+k).value.trim();if(!v)return;if(k==='rem'||k==='ev'){const m=v.match(/^(\d{4}-\d\d-\d\d[ T]\d\d:\d\d)\s+(.*)$/);if(!m)return alert('Biçim: 2026-11-23 08:00 metin');db[k].push({t:new Date(m[1]).getTime(),text:m[2],done:0})}else db[k].push(v);save();agenda()};
+/* ---- memory ---- */
+function memList(){$('#memList').innerHTML=db.mem.length?db.mem.map((m,i)=>`<div class="card"><span>${esc(m)}</span><button onclick="del('mem',${i});memList()">Sil</button></div>`).join(''):'<div style="color:var(--m)">NOVA henüz bir şey hatırlamıyor.</div>'}
+$('#memAdd').onclick=()=>{const v=$('#memIn').value.trim();if(v){db.mem.push(v);$('#memIn').value='';save();memList()}};
+$('#memClr').onclick=()=>{if(confirm('Tüm hafıza silinsin mi?')){db.mem=[];save();memList()}};
+$('#chatClr').onclick=()=>{if(confirm('Sohbet geçmişi silinsin mi?')){db.chat=[];save();$('#msgs').innerHTML=''}};
+</script>
+<script>/* ---- code lab ---- */
+let PY;const out=$('#out');
+window.addEventListener('message',e=>{if(e.data&&e.data.nova!==undefined)out.textContent+=e.data.nova+'\n'});
+async function run(){const c=$('#ed').value,l=$('#lang').value,fr=$('#fr');out.textContent='';
+ if(l==='html'){fr.srcdoc=c;return}
+ if(l==='js'){fr.srcdoc=`<script>const P=m=>parent.postMessage({nova:m},'*');console.log=(...a)=>P(a.map(String).join(' '));console.error=(...a)=>P('HATA: '+a.join(' '));onerror=(m,s,n)=>P('HATA: '+m+' (satır '+n+')');<\/script><script>${c}<\/script>`;return}
+ out.textContent='Python yükleniyor...\n';
+ try{if(!window.loadPyodide)await new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js';s.onload=ok;s.onerror=no;document.head.appendChild(s)});
+  PY=PY||await loadPyodide();out.textContent='';PY.setStdout({batched:s=>out.textContent+=s+'\n'});PY.setStderr({batched:s=>out.textContent+='HATA: '+s+'\n'});await PY.runPythonAsync(c)}catch(e){out.textContent+='HATA: '+e.message}}
+$('#run').onclick=run;
+$('#fix').onclick=()=>{show('chat');send('Bu kodda hata var ya da düzelmesi gerekiyor, hatayı bulup düzeltilmiş tam kodu ver:\n```\n'+$('#ed').value+'\n```\nÇıktı/hata:\n'+out.textContent)};
+window.labFrom=b=>{const p=b.previousElementSibling,l=(p.dataset.l||'').toLowerCase();$('#ed').value=p.textContent;$('#lang').value=/html/.test(l)?'html':/py/.test(l)?'py':'js';show('lab');run()};
+</script>
+<script>/* ---- settings ---- */
+function theme(){C=cfg.theme;document.documentElement.style.setProperty('--c',C)}
+document.querySelectorAll('[data-k]').forEach(el=>{const k=el.dataset.k;if(el.type==='checkbox')el.checked=!!cfg[k];else el.value=cfg[k];
+ el.onchange=()=>{cfg[k]=el.type==='checkbox'?el.checked:el.value.trim();
+  save();theme();if(k==='lang'||k==='whisper'){try{rec&&rec.stop()}catch{};if(started)listen()}}});
+$('#lm').value=cfg.lm;$('#lm').onchange=()=>{cfg.lm=$('#lm').value;cfg.lmOn=false;ENG=null;save()};
+$('#lmGo').onclick=async()=>{boot();try{await loadLocal(cfg.lm);cfg.lmOn=true;save();$('#lmSt').textContent='Hazır: beyin bu cihazda çalışıyor.'}catch(e){$('#lmSt').textContent='Hata: '+e.message;setSt('idle')}};
+theme();speechSynthesis&&speechSynthesis.getVoices();
+if(!SR)$('#stat').textContent='Bu tarayıcıda sesli dinleme yok. Chrome/Edge/Safari dene, yazarak devam edebilirsin.';
+</script>
+<script>if(typeof boot==="undefined"){var e=document.getElementById("stat");if(e)e.textContent="Dosyalar yüklenemedi. Zip'i ayıklayıp aç ya da nova-tek-dosya.html kullan."}</script>
+</body></html>
